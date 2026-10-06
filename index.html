@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Office Fortress Defense</title>
+<style>
+:root{
+  --bg:#0b1020;
+  --panel:#131a2d;
+  --panel2:#18223a;
+  --ink:#f7f9ff;
+  --muted:#aab4cf;
+  --line:#2e3a59;
+  --cyan:#53d8fb;
+  --blue:#4e8cff;
+  --violet:#9b6cff;
+  --green:#49d17d;
+  --yellow:#ffd166;
+  --orange:#ff9f43;
+  --red:#ff5d73;
+  --white:#fff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;min-height:100%;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:
+ radial-gradient(circle at 15% 10%,rgba(78,140,255,.16),transparent 28%),
+ radial-gradient(circle at 90% 18%,rgba(155,108,255,.14),transparent 25%),
+ linear-gradient(180deg,#09101d,#0e1630 60%,#09101d);color:var(--ink)}
+body{padding:max(10px,env(safe-area-inset-top)) 10px max(18px,env(safe-area-inset-bottom))}
+button,select{font:inherit}
+button{touch-action:manipulation}
+.app{width:min(1220px,100%);margin:auto}
+.topbar{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-bottom:10px}
+.brand{display:flex;gap:10px;align-items:center;min-width:0}
+.brand-mark{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,var(--cyan),var(--violet));display:flex;align-items:center;justify-content:center;font-size:25px;box-shadow:0 7px 20px rgba(83,216,251,.18)}
+.brand h1{font-size:clamp(20px,5.4vw,34px);line-height:1;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand small{display:block;color:var(--muted);font-size:12px;margin-top:4px}
+.timer{background:rgba(19,26,45,.95);border:1px solid var(--line);padding:10px 12px;border-radius:14px;text-align:center;min-width:88px}
+.timer b{font-size:21px;color:var(--yellow)}
+.hud{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:10px 0}
+.hud-card{background:rgba(19,26,45,.94);border:1px solid var(--line);border-radius:13px;padding:9px;text-align:center}
+.hud-card .v{font-size:18px;font-weight:900}.hud-card .k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.battlefield{background:linear-gradient(180deg,#111a2f,#0c1428);border:1px solid var(--line);border-radius:18px;padding:12px;margin-bottom:12px;overflow:hidden}
+.battle-title{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:12px;color:var(--muted);margin-bottom:8px}
+.lane{position:relative;height:128px;border-radius:16px;overflow:hidden;background:
+ linear-gradient(180deg,#203456 0 28%,#344b6a 28% 31%,#26344d 31% 68%,#17263d 68%);
+ border:1px solid #314463}
+.lane:before{content:"";position:absolute;left:0;right:0;top:53%;height:4px;background:repeating-linear-gradient(90deg,#8ea0bd 0 20px,transparent 20px 38px);opacity:.45}
+.base{position:absolute;left:12px;bottom:17px;width:84px;height:84px;border-radius:14px 14px 8px 8px;background:linear-gradient(180deg,#314c75,#20314d);border:2px solid #5f7ca8;box-shadow:inset 0 0 0 4px rgba(255,255,255,.04)}
+.base:before{content:"🏰";position:absolute;left:17px;top:12px;font-size:43px}
+.tower{position:absolute;left:118px;bottom:28px;width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#aaf0ff,#4e8cff 45%,#273a72 70%);border:3px solid #7bdfff;box-shadow:0 0 18px rgba(83,216,251,.35)}
+.tower:before{content:"⚡";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:26px}
+.enemy{position:absolute;right:18px;bottom:28px;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#ff8d7a,#ff5d73);border:3px solid #ffc0ca;display:flex;align-items:center;justify-content:center;font-size:28px;transition:right .35s ease,transform .25s ease,opacity .25s ease;box-shadow:0 0 16px rgba(255,93,115,.25)}
+.enemy.hit{transform:scale(.4);opacity:.25}
+.shot{position:absolute;left:170px;bottom:55px;width:18px;height:6px;border-radius:999px;background:linear-gradient(90deg,var(--cyan),#fff);box-shadow:0 0 14px var(--cyan);opacity:0;transform:translateX(0)}
+.shot.fire{animation:fire .45s ease-out}
+@keyframes fire{0%{opacity:1;transform:translateX(0)}100%{opacity:0;transform:translateX(600px)}}
+.healthbar{position:absolute;left:10px;right:10px;top:8px;height:8px;border-radius:999px;background:#1b263e;overflow:hidden;border:1px solid #324667}
+.healthfill{height:100%;width:100%;background:linear-gradient(90deg,var(--green),var(--yellow),var(--red));transition:width .25s ease}
+.screen{display:none}.screen.active{display:block}
+.card{background:linear-gradient(180deg,rgba(19,26,45,.98),rgba(13,19,35,.98));border:1px solid var(--line);border-radius:18px;padding:clamp(15px,4vw,24px);box-shadow:0 18px 42px rgba(0,0,0,.28)}
+.hero{position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;width:240px;height:240px;border-radius:50%;border:34px solid rgba(83,216,251,.08);right:-100px;top:-100px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--yellow);font-weight:900}
+h2{font-size:clamp(28px,7.5vw,48px);line-height:1.04;margin:7px 0 12px}
+h3{font-size:clamp(21px,5.2vw,30px);margin:0 0 10px}
+p{line-height:1.55}
+.objective{background:#0e1930;border-left:5px solid var(--cyan);padding:12px 14px;border-radius:12px;margin:14px 0}
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+.rule{background:#101a31;border:1px solid var(--line);border-radius:13px;padding:11px}
+.rule b{display:block;color:var(--cyan);margin-bottom:4px}
+.score-rule{background:#151f38;border:1px solid #334565;border-radius:13px;padding:11px;margin:12px 0;color:#dfe7f8}
+.btn{border:0;border-radius:12px;min-height:48px;padding:12px 16px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:linear-gradient(135deg,var(--blue),var(--violet));color:#fff}
+.btn-secondary{background:#202c48;color:#fff;border:1px solid #3d4c6a}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.level-banner{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px}
+.level-chip{padding:7px 10px;border-radius:999px;background:linear-gradient(135deg,var(--yellow),var(--orange));color:#4f3900;font-size:12px;font-weight:900}
+.qtype{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--cyan);font-weight:900}
+.question{font-size:clamp(18px,4.8vw,25px);font-weight:900;line-height:1.35;margin:8px 0 14px}
+.answers{display:grid;gap:9px}
+.answer{width:100%;text-align:left;background:#101a31;color:#fff;border:1px solid #33425f;border-radius:13px;padding:13px 14px;min-height:50px;cursor:pointer}
+.answer:hover{border-color:#6a80aa}
+.answer.correct{border-color:var(--green);background:rgba(73,209,125,.12)}
+.answer.dim{opacity:.48}
+.feedback{display:none;margin-top:13px;padding:13px 14px;border-radius:13px;line-height:1.45}
+.feedback.show{display:block}.feedback.good{background:rgba(73,209,125,.11);border:1px solid rgba(73,209,125,.5)}.feedback.bad{background:rgba(255,93,115,.09);border:1px solid rgba(255,93,115,.5)}
+.feedback strong{display:block;margin-bottom:4px}
+.actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:14px}
+.match-grid{display:grid;gap:10px}
+.match-row{display:grid;grid-template-columns:1.5fr 1fr;gap:8px;align-items:center;background:#101a31;border:1px solid #33425f;border-radius:13px;padding:10px}
+.match-row label{font-size:14px;line-height:1.35}
+select{width:100%;min-height:44px;background:#0c1428;color:#fff;border:1px solid #536382;border-radius:10px;padding:8px;font-size:16px}
+.scenario{background:#101a31;border:1px solid #33425f;border-radius:13px;padding:13px;margin-bottom:12px}
+.scenario .tag{display:inline-block;background:linear-gradient(135deg,var(--blue),var(--violet));border-radius:999px;padding:4px 8px;font-size:11px;font-weight:900;margin-bottom:6px}
+.badge-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.badge{padding:7px 9px;border-radius:999px;background:#202b45;border:1px solid #3a496a;color:#cdd7ec;font-size:12px;font-weight:900}
+.badge.unlocked{background:rgba(255,209,102,.12);border-color:#8a7337;color:#ffe69f}
+.complete{text-align:center}
+.trophy{font-size:72px}
+.score-big{font-size:clamp(48px,14vw,88px);font-weight:1000;line-height:1;color:var(--yellow)}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
+.summary-grid div{background:#101a31;border:1px solid var(--line);border-radius:13px;padding:10px}
+.tiny{font-size:12px;color:var(--muted)}
+.footer-note{text-align:center;color:#7f8ba5;font-size:11px;margin-top:10px}
+@media(max-width:650px){
+  .hud{grid-template-columns:repeat(2,1fr)}
+  .rules{grid-template-columns:1fr}
+  .match-row{grid-template-columns:1fr}
+  .summary-grid{grid-template-columns:1fr 1fr}
+  .lane{height:112px}
+  .base{left:8px;bottom:18px;width:68px;height:68px}.base:before{font-size:36px;left:13px;top:10px}
+  .tower{left:84px;bottom:28px;width:48px;height:48px}
+  .enemy{bottom:25px;width:52px;height:52px}
+}
+@media(max-width:380px){.summary-grid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.enemy{transition:none}.shot.fire{animation:none}}
+</style>
+</head>
+<body>
+<main class="app">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">🛡️</div>
+      <div>
+        <h1>Office Fortress Defense</h1>
+        <small>CSS3003 • Topic 3 • Application Software</small>
+      </div>
+    </div>
+    <div class="timer"><div class="tiny">DEFENSE CLOCK</div><b id="timer">15:00</b></div>
+  </div>
+
+  <div class="hud">
+    <div class="hud-card"><div class="v" id="mark">100</div><div class="k">Mark /100</div></div>
+    <div class="hud-card"><div class="v" id="xp">0</div><div class="k">XP</div></div>
+    <div class="hud-card"><div class="v" id="baseHp">100</div><div class="k">Defense HP</div></div>
+    <div class="hud-card"><div class="v" id="streak">0</div><div class="k">Streak</div></div>
+    <div class="hud-card"><div class="v" id="levelHud">Start</div><div class="k">Wave</div></div>
+  </div>
+
+  <div class="battlefield">
+    <div class="battle-title"><span id="battleText">Enemy wave approaching…</span><span id="progressText">0 / 20 defeated</span></div>
+    <div class="lane" aria-label="Tower defense learning battlefield">
+      <div class="healthbar"><div class="healthfill" id="healthfill"></div></div>
+      <div class="base" aria-hidden="true"></div>
+      <div class="tower" aria-hidden="true"></div>
+      <div class="shot" id="shot" aria-hidden="true"></div>
+      <div class="enemy" id="enemy" aria-hidden="true">👾</div>
+    </div>
+  </div>
+
+  <section id="startScreen" class="screen active">
+    <div class="card hero">
+      <div class="eyebrow">15-minute learning defense</div>
+      <h2>Defend the Office Core from bad software decisions.</h2>
+      <p>You are the commander of the <b>Office Fortress</b>. Each enemy represents a real application-software decision. Correct decisions fire the knowledge tower. Wrong decisions let the enemy advance and reduce your mark.</p>
+      <div class="objective">
+        <b>Learning Objective</b><br>
+        By the end of the game, students can <b>select the most appropriate application software, office productivity tool, DBMS component, AI office feature, or ethical action for a given situation</b>.
+      </div>
+      <div class="rules">
+        <div class="rule"><b>Wave 1 • Productivity Gate</b>Core application software, Word, spreadsheets, presentations and integration.</div>
+        <div class="rule"><b>Wave 2 • Data Bastion</b>DBMS concepts, Microsoft Access components and data-management decisions.</div>
+        <div class="rule"><b>Wave 3 • AI Citadel</b>AI office integration, prompt use, limitations, privacy and human oversight.</div>
+      </div>
+      <div class="score-rule"><b>Assessment rule:</b> Each of the 20 questions begins at <b>5 marks</b>. Every wrong attempt reduces that question by <b>1 mark</b>, down to a minimum of <b>1 mark</b>. The red enemy moves closer to the blue defense tower after every wrong answer. If it reaches the blue tower, the fortress is breached and the game is over. You may then restart the game. Maximum final mark = <b>100</b>.</div>
+      <p class="tiny">Wrong answers reveal no hint or correct answer. Explanations appear only after a correct response. <b>Question order and answer choices are shuffled for each new game</b>, while Easy → Medium → Hard progression is preserved.</p>
+      <button class="btn btn-primary" id="startBtn">Begin Defense ⚔️</button>
+    </div>
+  </section>
+
+  <section id="gameScreen" class="screen">
+    <div class="card">
+      <div class="level-banner">
+        <div>
+          <div class="qtype" id="qtype">Multiple Choice</div>
+          <h3 id="levelTitle">Productivity Gate</h3>
+        </div>
+        <div class="level-chip" id="levelChip">EASY</div>
+      </div>
+      <div class="tiny" id="questionValue">Current question value: 5 / 5 marks</div>
+      <div id="challengeArea"></div>
+      <div class="feedback" id="feedback" aria-live="polite"></div>
+      <div class="actions">
+        <button class="btn btn-secondary" id="submitBtn" style="display:none">Check Defense</button>
+        <button class="btn btn-primary" id="nextBtn" style="display:none">Next Wave →</button>
+      </div>
+    </div>
+  </section>
+
+
+  <section id="gameOverScreen" class="screen">
+    <div class="card complete">
+      <div class="eyebrow">Fortress Breached</div>
+      <div class="trophy">💥👾</div>
+      <h2>Game Over</h2>
+      <div class="score-big" id="gameOverMark">0</div>
+      <div class="tiny">MARK EARNED BEFORE BREACH</div>
+      <div class="summary-grid">
+        <div><b id="gameOverMastery">0/20</b><br><span class="tiny">ENEMIES DEFEATED</span></div>
+        <div><b id="gameOverWrong">0</b><br><span class="tiny">WRONG ATTEMPTS</span></div>
+        <div><b id="gameOverTime">0:00</b><br><span class="tiny">TIME SURVIVED</span></div>
+        <div><b>0 HP</b><br><span class="tiny">DEFENSE STATUS</span></div>
+      </div>
+      <p>The red enemy reached the blue defense tower. Review the topic, then restart and defend the fortress again.</p>
+      <button class="btn btn-primary" id="playAgainBtn">Play Again ↻</button>
+    </div>
+  </section>
+
+  <section id="completeScreen" class="screen">
+    <div class="card complete">
+      <div class="eyebrow">Defense Complete</div>
+      <div class="trophy">🏰🏆</div>
+      <h2 id="finishTitle">Fortress Secured!</h2>
+      <div class="score-big" id="finalMark">0</div>
+      <div class="tiny">FINAL MARK /100</div>
+      <div class="summary-grid">
+        <div><b id="finalXP">0</b><br><span class="tiny">XP</span></div>
+        <div><b id="mastery">0/20</b><br><span class="tiny">QUESTIONS MASTERED</span></div>
+        <div><b id="wrongCount">0</b><br><span class="tiny">WRONG ATTEMPTS</span></div>
+        <div><b id="timeUsed">0:00</b><br><span class="tiny">TIME USED</span></div>
+      </div>
+      <div class="badge-row" id="badgeSummary"></div>
+      <p id="motivation"></p>
+      <button class="btn btn-primary" id="restartBtn">Defend Again ↻</button>
+    </div>
+  </section>
+
+  <div class="footer-note">20 source-based challenges • Mobile-friendly • No external libraries, APIs, CDNs or assets</div>
+</main>
+
+<script>
+(function(){
+"use strict";
+
+const questionBank=[
+  // WAVE 1 — CORE OFFICE PRODUCTIVITY (1-7)
+  {level:1,type:"mcq",title:"Productivity Gate",difficulty:"EASY",
+   prompt:"A student needs to create a formal report with headings, page numbers and references. Which software is most appropriate?",
+   options:["Word processing software","Spreadsheet software","Presentation software","DBMS software"],answer:0,
+   explanation:"Word processing software is designed to create and manipulate professional documents and supports features such as styles, headers/footers, page numbering and citation tools."},
+
+  {level:1,type:"mcq",title:"Productivity Gate",difficulty:"EASY",
+   prompt:"Which application is best for organizing data in rows and columns, performing calculations, and creating charts?",
+   options:["Spreadsheet software","Word processing software","Presentation software","Email client"],answer:0,
+   explanation:"Spreadsheet software organizes data in rows and columns and supports formulas, functions, analysis and charting."},
+
+  {level:1,type:"mcq",title:"Productivity Gate",difficulty:"EASY",
+   prompt:"A lecturer wants to communicate research findings visually to a class. Which software is the best fit?",
+   options:["Presentation software","DBMS software","Word processing software","Antivirus software"],answer:0,
+   explanation:"Presentation software creates visual aids for communicating ideas, messages and information to an audience."},
+
+  {level:1,type:"match",title:"Productivity Gate",difficulty:"EASY",
+   prompt:"Match each task to the most suitable productivity application.",
+   pairs:[["Create a professional report","Word Processing"],["Calculate a monthly budget","Spreadsheet"],["Deliver a visual briefing","Presentation"]],
+   choices:["Word Processing","Spreadsheet","Presentation","DBMS","Web Browser"],
+   explanation:"Word processing supports documents, spreadsheets support calculations and data analysis, and presentation software supports visual communication."},
+
+  {level:1,type:"mcq",title:"Productivity Gate",difficulty:"EASY",
+   prompt:"Which spreadsheet feature performs a predefined calculation such as SUM, AVERAGE or IF?",
+   options:["Function","Slide layout","Query","Footer"],answer:0,
+   explanation:"Spreadsheet functions are predefined formulas that perform specific calculations, such as SUM, AVERAGE and IF."},
+
+  {level:1,type:"scenario",title:"Productivity Gate",difficulty:"EASY",
+   prompt:"A team wants an Excel chart to appear directly inside a Word report. Which office-software practice best supports this?",
+   options:["Application integration","Database normalization","Firmware updating","Antivirus scanning"],answer:0,
+   explanation:"Office productivity applications are designed to work together; for example, an Excel chart can be embedded directly into a Word report."},
+
+  {level:1,type:"mcq",title:"Productivity Gate",difficulty:"EASY",
+   prompt:"Which presentation-design principle means using the same font, size conventions and color scheme across all slides?",
+   options:["Consistency","Contrast","KISS Rule","Visual Hierarchy"],answer:0,
+   explanation:"Consistency means applying the same font, size conventions and color scheme across the presentation."},
+
+  // WAVE 2 — DBMS / ACCESS (8-13)
+  {level:2,type:"mcq",title:"Data Bastion",difficulty:"MEDIUM",
+   prompt:"Which statement best describes a Database Management System (DBMS)?",
+   options:["Software that lets users create, define, manipulate and manage databases","Software used only for slide design","A utility that controls RAM","A tool used only to edit images"],answer:0,
+   explanation:"A DBMS allows users to create, define, manipulate and manage databases and acts as an interface between users/applications and stored data."},
+
+  {level:2,type:"mcq",title:"Data Bastion",difficulty:"MEDIUM",
+   prompt:"Which DBMS benefit ensures data remains accurate, consistent and follows defined rules?",
+   options:["Data Integrity","Animation","Compression","Presentation Design"],answer:0,
+   explanation:"Data integrity helps ensure data is accurate, consistent and adheres to defined rules."},
+
+  {level:2,type:"match",title:"Data Bastion",difficulty:"MEDIUM",
+   prompt:"Match each Microsoft Access component to its main function.",
+   pairs:[["Stores data in records and fields","Tables"],["Provides a graphical interface for entering/viewing data","Forms"],["Retrieves data based on criteria","Queries"],["Produces formatted printable output","Reports"]],
+   choices:["Tables","Forms","Queries","Reports","Slides"],
+   explanation:"Access uses Tables to store data, Forms for data entry/viewing, Queries for criteria-based retrieval, and Reports for summarized formatted output."},
+
+  {level:2,type:"scenario",title:"Data Bastion",difficulty:"MEDIUM",
+   prompt:"A small business needs to track stock levels, suppliers and part numbers without dedicated IT staff. Which tool from the topic is suitable?",
+   options:["Microsoft Access","A large-scale NoSQL cluster","Video-editing software","Presentation software only"],answer:0,
+   explanation:"Microsoft Access is suitable for small-scale structured-data applications such as small-business inventory tracking."},
+
+  {level:2,type:"scenario",title:"Data Bastion",difficulty:"MEDIUM",
+   prompt:"Which situation is NOT suitable for Microsoft Access?",
+   options:["A website serving thousands of concurrent users","A small event guest list","A small personnel database","A small-project budget tracker"],answer:0,
+   explanation:"Microsoft Access is not ideal for enterprise-scale applications, very high transaction volumes or websites with thousands of concurrent users."},
+
+  {level:2,type:"mcq",title:"Data Bastion",difficulty:"MEDIUM",
+   prompt:"In a relational DBMS, structured tables can be linked using what type of keys?",
+   options:["Primary and Foreign Keys","Slide and Theme Keys","Font and Style Keys","Prompt and Output Keys"],answer:0,
+   explanation:"Relational databases store structured data in tables linked by relationships, commonly using primary and foreign keys."},
+
+  // WAVE 3 — AI IN OFFICE + ETHICS / LIMITATIONS (14-19)
+  {level:3,type:"match",title:"AI Citadel",difficulty:"HARD",
+   prompt:"Match each AI enhancement pillar to the correct office task.",
+   pairs:[["Draft text or summarize documents","Generation"],["Identify trends or suggest formulas","Analysis"],["Schedule, sort or apply design suggestions","Automation"]],
+   choices:["Generation","Analysis","Automation","Database","Licensing"],
+   explanation:"The topic identifies Generation, Analysis and Automation as three major ways AI adds value to office tools."},
+
+  {level:3,type:"mcq",title:"AI Citadel",difficulty:"HARD",
+   prompt:"In office AI, what is prompt engineering?",
+   options:["Crafting effective input queries to guide AI behavior","Installing a database server","Compressing files","Updating device drivers"],answer:0,
+   explanation:"Prompt engineering is the practice of crafting effective input queries to guide AI behavior and improve results."},
+
+  {level:3,type:"scenario",title:"AI Citadel",difficulty:"HARD",
+   prompt:"An Excel AI feature automatically generates charts, pivot tables and plain-language summaries from a dataset. Which example from the topic does this describe?",
+   options:["Analyze Data","Track Changes","Mail Merge","Slide Master"],answer:0,
+   explanation:"The topic describes an 'Analyze Data' feature that can generate charts, pivot tables and plain-language summaries from complex datasets."},
+
+  {level:3,type:"scenario",title:"AI Citadel",difficulty:"HARD",
+   prompt:"An AI office assistant generates a confident factual claim, but no reliable source is shown. What should the student do?",
+   options:["Verify the claim before using it","Use it because it sounds confident","Submit it without checking","Remove human review"],answer:0,
+   explanation:"AI can hallucinate and confidently present false information, so human oversight and verification are required."},
+
+  {level:3,type:"scenario",title:"AI Citadel",difficulty:"HARD",
+   prompt:"A student plans to paste confidential personal data into an AI office tool. Which ethical consideration is most important?",
+   options:["Understand how the data is used and stored before sharing it","Assume every AI service is automatically private","Ignore data-use policies","Share the data publicly first"],answer:0,
+   explanation:"Privacy and data use are explicit ethical concerns. Users should understand how data is used and stored before entering sensitive information."},
+
+  {level:3,type:"mcq",title:"AI Citadel",difficulty:"HARD",
+   prompt:"Which AI limitation can cause existing unfair patterns in training data to appear in generated outputs?",
+   options:["Bias","File compression","Data integrity","Slide consistency"],answer:0,
+   explanation:"AI models can perpetuate unconscious bias found in the data on which they were trained."},
+
+  // FINAL BOSS (20)
+  {level:4,type:"boss",title:"FINAL BOSS • Core Siege",difficulty:"BOSS",
+   prompt:"A university team must write a report, analyze survey data, present findings, manage structured participant records, and use AI responsibly. Which solution is best?",
+   options:[
+     "Word processor + Spreadsheet + Presentation software + DBMS + Human verification of AI output and privacy checks",
+     "Presentation software only + accept all AI output without verification",
+     "DBMS only + no document or analysis tools",
+     "Spreadsheet only + upload confidential data to any AI service"
+   ],answer:0,
+   explanation:"The best solution selects the appropriate application for each task, uses a DBMS for structured records, and applies human oversight, verification and privacy awareness when using AI."}
+];
+
+let questions=[];
+let total=0;
+let idx=0,totalMark=0,xp=0,streak=0,mastered=0,totalWrong=0,answered=false,attempts=0,questionMark=5,secondsLeft=900,timerHandle=null,startTime=null;
+let baseHp=100;
+let badges={productivity:false,data:false,ai:false,perfect:false,boss:false};
+
+
+function shuffledCopy(arr){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function prepareShuffledQuestions(){
+  // Preserve progressive difficulty by shuffling only within each wave.
+  const easy=shuffledCopy(questionBank.filter(q=>q.level===1));
+  const medium=shuffledCopy(questionBank.filter(q=>q.level===2));
+  const hard=shuffledCopy(questionBank.filter(q=>q.level===3));
+  const boss=questionBank.filter(q=>q.level===4).map(q=>({...q}));
+
+  questions=[...easy,...medium,...hard,...boss].map(q=>{
+    const nq={...q};
+
+    if(Array.isArray(q.options)){
+      const correctText=q.options[q.answer];
+      nq.options=shuffledCopy(q.options);
+      nq.answer=nq.options.indexOf(correctText);
+    }
+
+    if(Array.isArray(q.pairs)){
+      nq.pairs=shuffledCopy(q.pairs.map(p=>p.slice()));
+    }
+
+    if(Array.isArray(q.choices)){
+      nq.choices=shuffledCopy(q.choices);
+    }
+
+    return nq;
+  });
+
+  total=questions.length;
+}
+
+const $=id=>document.getElementById(id);
+const els={
+ start:$("startScreen"),game:$("gameScreen"),gameOver:$("gameOverScreen"),complete:$("completeScreen"),timer:$("timer"),
+ mark:$("mark"),xp:$("xp"),baseHp:$("baseHp"),streak:$("streak"),levelHud:$("levelHud"),
+ battleText:$("battleText"),progressText:$("progressText"),healthfill:$("healthfill"),enemy:$("enemy"),shot:$("shot"),
+ qtype:$("qtype"),levelTitle:$("levelTitle"),levelChip:$("levelChip"),questionValue:$("questionValue"),
+ challenge:$("challengeArea"),feedback:$("feedback"),next:$("nextBtn"),submit:$("submitBtn"),
+ finalMark:$("finalMark"),finalXP:$("finalXP"),mastery:$("mastery"),wrongCount:$("wrongCount"),
+ timeUsed:$("timeUsed"),finishTitle:$("finishTitle"),motivation:$("motivation"),badgeSummary:$("badgeSummary"),
+ gameOverMark:$("gameOverMark"),gameOverMastery:$("gameOverMastery"),gameOverWrong:$("gameOverWrong"),gameOverTime:$("gameOverTime")
+};
+
+function show(s){[els.start,els.game,els.gameOver,els.complete].forEach(x=>x.classList.remove("active"));s.classList.add("active");window.scrollTo({top:0,behavior:"smooth"})}
+function fmt(sec){sec=Math.max(0,sec);return Math.floor(sec/60)+":"+String(sec%60).padStart(2,"0")}
+function tick(){secondsLeft--;els.timer.textContent=fmt(secondsLeft);if(secondsLeft<=60)els.timer.style.color="var(--red)";if(secondsLeft<=0){clearInterval(timerHandle);finish(true)}}
+function startGame(){
+ prepareShuffledQuestions();
+ idx=0;totalMark=0;xp=0;streak=0;mastered=0;totalWrong=0;answered=false;attempts=0;questionMark=5;secondsLeft=900;baseHp=100;
+ badges={productivity:false,data:false,ai:false,perfect:false,boss:false};
+ startTime=Date.now();clearInterval(timerHandle);timerHandle=setInterval(tick,1000);
+ els.timer.textContent="15:00";els.timer.style.color="var(--yellow)";
+ show(els.game);updateHud();renderQuestion();
+}
+function updateHud(){
+ els.mark.textContent=totalMark;
+ els.xp.textContent=xp;
+ els.baseHp.textContent=baseHp;
+ els.streak.textContent=streak;
+ const q=questions[Math.min(idx,total-1)];
+ els.levelHud.textContent=q.level===4?"Boss":"W"+q.level;
+ els.progressText.textContent=Math.min(mastered,total)+" / "+total+" defeated";
+ els.battleText.textContent=q.level===4?"Final boss attacking the Office Core":q.title+" • Enemy "+(Math.min(idx+1,total))+" of "+total;
+ els.healthfill.style.width=Math.max(0,baseHp)+"%";
+ const wrongThisQuestion=Math.min(attempts,5);
+ const laneWidth=els.enemy.parentElement.clientWidth;
+ const enemyWidth=els.enemy.offsetWidth || 60;
+ const towerLeft=118;
+ const towerWidth=58;
+ const startRight=18;
+ const collisionRight=Math.max(startRight, laneWidth-(towerLeft+towerWidth+enemyWidth-4));
+ const advance=wrongThisQuestion/5;
+ els.enemy.style.right=(startRight + (collisionRight-startRight)*advance)+"px";
+}
+function fireTower(){
+ els.shot.classList.remove("fire");void els.shot.offsetWidth;els.shot.classList.add("fire");
+ els.enemy.classList.add("hit");setTimeout(()=>els.enemy.classList.remove("hit"),320);
+}
+function enemyAdvance(){
+ baseHp=Math.max(0,baseHp-20);
+ updateHud();
+ if(baseHp<=0 || attempts>=5){
+   setTimeout(gameOver,360);
+   return true;
+ }
+ return false;
+}
+function renderQuestion(){
+ answered=false;attempts=0;questionMark=5;baseHp=100;
+ els.enemy.style.right="18px";
+ els.feedback.className="feedback";els.feedback.innerHTML="";
+ els.next.style.display="none";els.submit.style.display="none";
+ const q=questions[idx];
+ els.levelTitle.textContent=q.title;els.levelChip.textContent=q.difficulty;
+ els.qtype.textContent=q.type==="match"?"Matching Defense":q.type==="scenario"?"Scenario Defense":q.type==="boss"?"Final Boss":"Multiple Choice";
+ els.questionValue.textContent="Current question value: "+questionMark+" / 5 marks";
+ let html='<div class="question">'+q.prompt+'</div>';
+ if(q.type==="match"){
+   html+='<div class="match-grid">';
+   q.pairs.forEach((pair,i)=>{
+     html+='<div class="match-row"><label for="m'+i+'">'+pair[0]+'</label><select id="m'+i+'"><option value="">Choose…</option>'+
+     q.choices.map(c=>'<option value="'+c+'">'+c+'</option>').join("")+'</select></div>';
+   });
+   html+='</div>';els.challenge.innerHTML=html;els.submit.style.display="inline-flex";els.submit.disabled=false;
+ }else{
+   if(q.type==="scenario"||q.type==="boss"){
+     html='<div class="scenario"><div class="tag">'+(q.type==="boss"?"FINAL BOSS":"WORKPLACE SCENARIO")+'</div><div class="question">'+q.prompt+'</div></div>';
+   }
+   html+='<div class="answers">'+q.options.map((o,i)=>'<button type="button" class="answer" data-i="'+i+'">'+String.fromCharCode(65+i)+'. '+o+'</button>').join("")+'</div>';
+   els.challenge.innerHTML=html;
+   els.challenge.querySelectorAll(".answer").forEach(btn=>btn.addEventListener("click",()=>answerMCQ(Number(btn.dataset.i))));
+ }
+ updateHud();
+}
+function wrongAttempt(){
+ attempts++;totalWrong++;streak=0;
+ if(questionMark>1)questionMark--;
+ const breached=enemyAdvance();
+ els.questionValue.textContent="Current question value: "+questionMark+" / 5 marks";
+ els.feedback.className="feedback show bad";
+ els.feedback.innerHTML=breached
+   ? "<strong>💥 Fortress breached!</strong>The enemy reached the blue defense tower."
+   : "<strong>✕ Incorrect. Try again.</strong>";
+ if(breached){
+   answered=true;
+   els.challenge.querySelectorAll("button,select").forEach(el=>el.disabled=true);
+   els.submit.disabled=true;
+ }
+}
+function correctAttempt(explanation){
+ answered=true;mastered++;totalMark+=questionMark;streak++;
+ baseHp=100;
+ if(attempts===0)badges.perfect=true;
+ const bonus=Math.min(streak,4)*5;
+ const earnedXP=40+bonus;xp+=earnedXP;
+ fireTower();
+ els.feedback.className="feedback show good";
+ els.feedback.innerHTML="<strong>✓ Correct! Tower hit. +"+questionMark+" marks, +"+earnedXP+" XP</strong>"+explanation;
+ const q=questions[idx];
+ if(q.level===1&&idx===6)badges.productivity=true;
+ if(q.level===2&&idx===12)badges.data=true;
+ if(q.level===3&&idx===18)badges.ai=true;
+ if(q.level===4)badges.boss=true;
+ updateHud();
+ els.next.style.display="inline-flex";
+ els.next.textContent=idx===total-1?"View Defense Report 🏆":"Next Wave →";
+}
+function answerMCQ(choice){
+ if(answered)return;
+ const q=questions[idx];
+ if(choice!==q.answer){wrongAttempt();return}
+ els.challenge.querySelectorAll(".answer").forEach((b,i)=>{b.disabled=true;if(i===q.answer)b.classList.add("correct");else b.classList.add("dim")});
+ correctAttempt(q.explanation);
+}
+function checkMatch(){
+ if(answered)return;
+ const q=questions[idx],sels=q.pairs.map((_,i)=>document.getElementById("m"+i));
+ if(sels.some(s=>!s.value)){els.feedback.className="feedback show bad";els.feedback.innerHTML="<strong>Complete all matches first.</strong>";return}
+ const ok=sels.every((s,i)=>s.value===q.pairs[i][1]);
+ if(!ok){wrongAttempt();return}
+ sels.forEach(s=>{s.disabled=true;s.style.borderColor="var(--green)"});
+ els.submit.disabled=true;correctAttempt(q.explanation);
+}
+function nextQuestion(){idx++;if(idx>=total){finish(false);return}baseHp=100;els.enemy.style.right="18px";renderQuestion()}
+function gameOver(){
+ clearInterval(timerHandle);
+ const used=Math.min(900,Math.round((Date.now()-startTime)/1000));
+ show(els.gameOver);
+ els.gameOverMark.textContent=totalMark;
+ els.gameOverMastery.textContent=mastered+"/"+total;
+ els.gameOverWrong.textContent=totalWrong;
+ els.gameOverTime.textContent=fmt(used);
+ els.baseHp.textContent=0;
+ els.healthfill.style.width="0%";
+}
+function finish(timeout){
+ clearInterval(timerHandle);show(els.complete);
+ const used=Math.min(900,Math.round((Date.now()-startTime)/1000));
+ els.finalMark.textContent=totalMark;
+ els.finalXP.textContent=xp;
+ els.mastery.textContent=mastered+"/"+total;
+ els.wrongCount.textContent=totalWrong;
+ els.timeUsed.textContent=fmt(used);
+ els.finishTitle.textContent=timeout?"Defense Clock Expired":"Fortress Secured!";
+ let msg;
+ if(!timeout&&totalMark>=90)msg="Outstanding defense. You selected software, DBMS tools and AI practices accurately with very few errors.";
+ else if(!timeout&&totalMark>=75)msg="Strong defense. Review the questions that cost marks, especially where multiple software options seemed plausible.";
+ else if(!timeout)msg="You completed the defense. Replay after reviewing productivity tools, Access components, AI integration and ethical limitations.";
+ else msg="The clock expired. Your final mark reflects the enemies defeated and deductions from wrong attempts.";
+ els.motivation.textContent=msg;
+ const defs=[["productivity","Productivity Defender"],["data","Data Guardian"],["ai","AI Ethics Shield"],["perfect","First-Strike Badge"],["boss","Core Siege Victor"]];
+ els.badgeSummary.innerHTML=defs.map(b=>'<span class="badge '+(badges[b[0]]?"unlocked":"")+'">'+(badges[b[0]]?"🏅 ":"🔒 ")+b[1]+'</span>').join("");
+}
+
+$("startBtn").addEventListener("click",startGame);
+$("nextBtn").addEventListener("click",nextQuestion);
+$("submitBtn").addEventListener("click",checkMatch);
+$("restartBtn").addEventListener("click",startGame);
+$("playAgainBtn").addEventListener("click",startGame);
+})();
+</script>
+</body>
+</html>
